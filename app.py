@@ -14,7 +14,7 @@ with st.sidebar:
     
     st.divider()
     st.write("**Desarrollado por:**")
-    st.markdown("👨‍💻 **Ricardo**") # ¡Puedes cambiar esto por tu nombre completo!
+    st.markdown("👨‍💻 **Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma**") # ¡Puedes cambiar esto por tu nombre completo!
     
     st.info("⚠️ **Aviso:** Esta es una herramienta no oficial. Los montos son estimados basados en la UIT vigente.")
     st.caption("Versión 1.0.0 | Datos 2025")
