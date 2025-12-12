@@ -18,27 +18,40 @@ st.set_page_config(
 # --- 2. SISTEMA DE REGISTRO (LOGS) ---
 ARCHIVO_REGISTRO = "registro_consultas.csv"
 
-def guardar_consulta(distrito, categoria, tiene_deuda):
-    """Guarda cada interacción en un archivo CSV local"""
+def guardar_consulta(dni, distrito, categoria, tiene_deuda):
+    """Guarda cada interacción incluyendo el DNI"""
     fecha = datetime.now().strftime("%Y-%m-%d")
     hora = datetime.now().strftime("%H:%M:%S")
+    
+    # Si el usuario no puso DNI, guardamos "Anónimo"
+    dni_guardar = dni if dni and len(dni) >= 8 else "Anónimo"
     
     nuevo_dato = {
         "fecha": fecha,
         "hora": hora,
+        "dni": dni_guardar, # <--- NUEVO CAMPO
         "distrito": distrito,
         "categoria": categoria,
         "tiene_deuda": "SI" if tiene_deuda else "NO"
     }
     
-    # Si el archivo no existe, crearlo con cabeceras
+    # Lógica de guardado a prueba de errores
     if not os.path.exists(ARCHIVO_REGISTRO):
         df = pd.DataFrame([nuevo_dato])
         df.to_csv(ARCHIVO_REGISTRO, index=False)
     else:
-        # Si existe, agregar la nueva fila
-        df_new = pd.DataFrame([nuevo_dato])
-        df_new.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
+        # Cargamos el archivo existente para ver si tiene la columna DNI
+        df_existente = pd.read_csv(ARCHIVO_REGISTRO)
+        if "dni" not in df_existente.columns:
+            # Si es un archivo viejo sin DNI, recreamos la estructura
+            df_new = pd.DataFrame([nuevo_dato])
+            # Concatenamos lo nuevo con lo viejo (rellenando DNI viejos con NaN)
+            df_final = pd.concat([df_existente, df_new], ignore_index=True)
+            df_final.to_csv(ARCHIVO_REGISTRO, index=False)
+        else:
+            # Si la estructura está bien, solo agregamos la fila (append)
+            df_new = pd.DataFrame([nuevo_dato])
+            df_new.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
 
 def cargar_registros():
     """Lee el archivo de registros para el dashboard"""
@@ -71,7 +84,6 @@ if 'deuda_actual' not in st.session_state:
     st.session_state['deuda_actual'] = 0.0
 if 'desglose_actual' not in st.session_state:
     st.session_state['desglose_actual'] = []
-# Estado para el login de admin
 if 'admin_logged_in' not in st.session_state:
     st.session_state['admin_logged_in'] = False
 
@@ -109,12 +121,18 @@ def main():
             st.info("Ingresa tus datos para verificar tu estado.")
             
             if not df.empty:
+                # --- NUEVO: INPUT DNI AL INICIO ---
+                st.markdown("**1. Identificación**")
+                dni_consulta = st.text_input("Ingresa tu DNI (Opcional para registro)", max_chars=8, help="Se usará para generar tu reporte")
+                
+                st.divider() # Línea separadora visual
+                
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.markdown("**Distrito de Votación**")
+                    st.markdown("**2. Ubicación**")
                     nombres = df['nombre'].tolist()
-                    distrito = st.selectbox("Seleccione distrito", nombres, label_visibility="collapsed")
+                    distrito = st.selectbox("Distrito de Votación", nombres, label_visibility="collapsed")
                     
                     categoria = df[df['nombre'] == distrito]['categoria'].values[0]
                     color_tag = "#00c853" if categoria == "No Pobre" else "#ffab00"
@@ -125,7 +143,7 @@ def main():
                     st.link_button("📍 Ver Oficina en Mapa", url_mapa)
 
                 with col2:
-                    st.markdown("**Participación**")
+                    st.markdown("**3. Participación**")
                     es_miembro = st.toggle("Fui Miembro de Mesa")
                     asistio_mesa = False
                     if es_miembro:
@@ -142,9 +160,8 @@ def main():
             st.session_state['deuda_actual'] = total
             st.session_state['desglose_actual'] = desglose
 
-            # --- REGISTRAR LA CONSULTA (NUEVO) ---
-            # Guardamos cada vez que alguien usa la app
-            guardar_consulta(distrito, categoria, total > 0)
+            # --- REGISTRAR LA CONSULTA CON DNI ---
+            guardar_consulta(dni_consulta, distrito, categoria, total > 0)
             # -------------------------------------
 
             if total > 0:
@@ -217,14 +234,13 @@ def main():
         if not st.session_state['admin_logged_in']:
             contra = st.text_input("Contraseña", type="password")
             if st.button("Ingresar"):
-                if contra == "admin123": # <--- CAMBIA TU CONTRASEÑA AQUÍ
+                if contra == "admin123": 
                     st.session_state['admin_logged_in'] = True
                     st.rerun()
                 else:
                     st.error("Acceso denegado")
         
         else:
-            # SI YA ESTÁ LOGUEADO, MOSTRAR EL DASHBOARD
             st.success("✅ Sesión Activa")
             if st.button("Cerrar Sesión"):
                 st.session_state['admin_logged_in'] = False
@@ -238,36 +254,30 @@ def main():
             if not df_logs.empty:
                 # 1. KPIs
                 total_consultas = len(df_logs)
-                deudores = len(df_logs[df_logs['tiene_deuda'] == "SI"])
+                # Contamos cuántos DNIs únicos (excluyendo "Anónimo" si quisieras)
+                dnis_capturados = df_logs[df_logs['dni'] != 'Anónimo']['dni'].nunique()
                 
                 kpi1, kpi2 = st.columns(2)
                 kpi1.metric("Total Consultas", total_consultas)
-                kpi2.metric("Con Multas", f"{deudores} ({int(deudores/total_consultas*100)}%)")
+                kpi2.metric("DNIs Únicos", dnis_capturados)
                 
-                # 2. Gráfico: Top Distritos
-                st.markdown("#### 🏆 Distritos con más consultas")
-                conteo_distritos = df_logs['distrito'].value_counts().head(5)
-                st.bar_chart(conteo_distritos)
+                # 2. Gráficos
+                st.markdown("#### 🏆 Distritos Top")
+                st.bar_chart(df_logs['distrito'].value_counts().head(5))
                 
-                # 3. Gráfico: Cronología
-                st.markdown("#### 📈 Actividad por Fecha")
-                actividad_fecha = df_logs['fecha'].value_counts().sort_index()
-                st.line_chart(actividad_fecha)
+                # 3. Tabla de Datos (Ahora con DNI)
+                st.markdown("#### 📋 Registro Detallado")
+                # Mostramos el DNI al admin
+                st.dataframe(df_logs[['fecha', 'hora', 'dni', 'distrito', 'tiene_deuda']].tail(10))
                 
-                # 4. Descargar Data
-                st.markdown("#### 📥 Descargar Datos")
+                # 4. Descarga
                 csv = df_logs.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    "Descargar Reporte Completo (CSV)",
+                    "📥 Descargar Base de Datos (CSV)",
                     csv,
-                    "reporte_visitas.csv",
+                    "registro_completo_con_dni.csv",
                     "text/csv"
                 )
-                
-                # 5. Tabla de últimos registros
-                with st.expander("Ver últimos 10 registros"):
-                    st.dataframe(df_logs.tail(10))
-                    
             else:
                 st.info("Aún no hay registros de visitas.")
 
