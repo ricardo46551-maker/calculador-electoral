@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import urllib.parse 
 import os
-import io  # <--- NUEVO: Necesario para generar el Excel en memoria
+import io
 from datetime import datetime
 from modules.calculadora import CalculadoraElectoral
 from modules.generador_pdf import crear_pdf_dispensa
@@ -16,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. SISTEMA DE REGISTRO (LOGS) ---
+# --- 2. SISTEMA DE REGISTRO (LOGS CON EXCEL) ---
 ARCHIVO_REGISTRO = "registro_consultas.csv"
 
 def guardar_consulta(dni, distrito, categoria, tiene_deuda):
@@ -40,6 +40,7 @@ def guardar_consulta(dni, distrito, categoria, tiene_deuda):
         df.to_csv(ARCHIVO_REGISTRO, index=False)
     else:
         df_existente = pd.read_csv(ARCHIVO_REGISTRO)
+        # Verificamos si existe la columna DNI para evitar errores con archivos viejos
         if "dni" not in df_existente.columns:
             df_new = pd.DataFrame([nuevo_dato])
             df_final = pd.concat([df_existente, df_new], ignore_index=True)
@@ -49,12 +50,11 @@ def guardar_consulta(dni, distrito, categoria, tiene_deuda):
             df_new.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
 
 def cargar_registros():
-    """Lee el archivo de registros para el dashboard"""
     if os.path.exists(ARCHIVO_REGISTRO):
         return pd.read_csv(ARCHIVO_REGISTRO)
     return pd.DataFrame()
 
-# --- 3. ESTILOS CSS (DARK MODE) ---
+# --- 3. ESTILOS CSS (MODO OSCURO) ---
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117; }
@@ -197,30 +197,53 @@ def main():
             else:
                 st.warning("Completa todos los campos.")
 
-    # --- TAB 3: FAQ ---
+    # --- TAB 3: FAQ (PREGUNTAS AMPLIADAS) ---
     with tab3:
-        st.markdown("### 📚 Centro de Ayuda")
+        st.markdown("### 📚 Centro de Ayuda al Elector")
+        st.markdown("Resolvemos tus dudas sobre el proceso electoral 2025.")
+        
         preguntas_frecuentes = [
-            ("📆 ¿Hasta qué edad es obligatorio votar?", "Hasta los 70 años. Mayores de 70 es opcional."),
-            ("💰 ¿Cuánto es la multa 2025?", "Varía entre S/ 26.75 y S/ 107.00 según tu distrito."),
-            ("🆔 ¿Puedo votar con DNI vencido?", "SÍ. RENIEC suele autorizarlo para el día de la elección."),
-            ("💳 ¿Dónde pago?", "En Págalo.pe o Banco de la Nación.")
+            ("📆 ¿Hasta qué edad es obligatorio votar?", 
+             "El voto es obligatorio desde los **18 hasta los 70 años**. Para los mayores de 70 años, el voto es facultativo (opcional), por lo que no generan multa si deciden no asistir."),
+            
+            ("💰 ¿Cuánto es la multa en 2025?", 
+             "Depende de la clasificación socioeconómica de tu distrito (No Pobre, Pobre, Pobre Extremo) y de la UIT vigente (S/ 5,350). Puede variar entre **S/ 26.75** y **S/ 107.00** por omisión al voto."),
+            
+            ("🆔 ¿Puedo votar con mi DNI vencido?", 
+             "**SÍ.** El RENIEC suele emitir una resolución que prorroga la vigencia de los DNI caducos exclusivamente para el día de las elecciones. No obstante, se recomienda renovarlo para otros trámites."),
+            
+            ("⚠️ Me robaron el DNI, ¿Qué hago?", 
+             "Si no tienes DNI físico el día de la votación, no podrás votar y se generará multa. Debes tramitar una **Dispensa** al día siguiente adjuntando la denuncia policial por robo o pérdida (la denuncia debe tener fecha anterior a la elección)."),
+
+            ("🤔 ¿Cuál es la diferencia entre Justificación y Dispensa?", 
+             "**Justificación:** Se solicita cuando fuiste elegido miembro de mesa y no pudiste asistir (multa de S/ 267.50). \n\n**Dispensa:** Se solicita cuando no fuiste a votar (multa de S/ 26.75 a S/ 107.00)."),
+
+            ("✈️ ¿Si estoy en el extranjero tengo multa?", 
+             "Si tu DNI tiene dirección en el extranjero, no tienes multa. Si tu DNI dice que vives en Perú pero estabas de viaje, **SÍ** tienes multa, a menos que tramites una dispensa probando estudios o salud."),
+
+            ("💳 ¿Dónde pago mis multas acumuladas?", 
+             "Puedes pagarlas en la plataforma **Págalo.pe** (del Banco de la Nación) o presencialmente en cualquier agencia del banco. Conserva siempre tu voucher de pago.")
         ]
-        for p, r in preguntas_frecuentes:
-            with st.expander(p):
-                st.write(r)
+        
+        for pregunta, respuesta in preguntas_frecuentes:
+            with st.expander(pregunta):
+                st.markdown(respuesta)
 
     # --- FOOTER ---
     st.divider()
     col_ft1, col_ft2 = st.columns([1,3])
     with col_ft1:
-        link_wa = f"https://wa.me/?text={urllib.parse.quote('Calcula tus multas: https://calculador-electoral.onrender.com')}"
+        link_wa = f"https://wa.me/?text={urllib.parse.quote('Calcula tus multas aquí: https://calculador-electoral.onrender.com')}"
         st.link_button("📲 Compartir", link_wa)
+    
+    # --- CRÉDITOS DEL EQUIPO (AQUÍ ESTÁN) ---
     with col_ft2:
-        st.caption("Desarrollado por: Equipo de Desarrollo 2025")
+        st.markdown("**Equipo de Desarrollo:**")
+        st.caption("👨‍💻 Ricardo Condori | Manuel Serra | Pablo Huasasquiche | Cristhian Arotoma")
+        st.caption("© 2025 Herramienta Ciudadana Independiente")
 
     # ==========================================
-    # 🔐 ZONA ADMIN (CON EXCEL)
+    # 🔐 ZONA ADMIN
     # ==========================================
     st.sidebar.markdown("---")
     with st.sidebar.expander("🔐 Acceso Admin"):
@@ -245,7 +268,7 @@ def main():
             df_logs = cargar_registros()
             
             if not df_logs.empty:
-                # 1. KPIs
+                # KPIs
                 total_consultas = len(df_logs)
                 if 'dni' in df_logs.columns:
                     dnis_capturados = df_logs[df_logs['dni'] != 'Anónimo']['dni'].nunique()
@@ -256,24 +279,19 @@ def main():
                 kpi1.metric("Total Consultas", total_consultas)
                 kpi2.metric("DNIs Capturados", dnis_capturados)
                 
-                # 2. Gráficos
+                # Gráficos
                 st.markdown("#### 🏆 Distritos Top")
                 st.bar_chart(df_logs['distrito'].value_counts().head(5))
                 
-                # 3. Vista Previa de Tabla
+                # Tabla
                 st.markdown("#### 📋 Vista Previa")
                 st.dataframe(df_logs.tail(5))
                 
-                # 4. DESCARGA EN EXCEL (NUEVO)
-                # Creamos un buffer en memoria para guardar el Excel
+                # Descarga Excel
                 buffer = io.BytesIO()
-                
-                # Usamos pandas para escribir en ese buffer con formato Excel
-                # engine='openpyxl' es lo que agregamos en requirements.txt
                 with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                     df_logs.to_excel(writer, index=False, sheet_name='Reporte')
                 
-                # Botón de descarga actualizado
                 st.download_button(
                     label="📥 Descargar Excel (.xlsx)",
                     data=buffer,
