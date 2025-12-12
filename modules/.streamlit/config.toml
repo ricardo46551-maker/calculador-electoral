@@ -1,10 +1,7 @@
 [theme]
-primaryColor = "#D91E18"  # Rojo intenso (Botones y acentos)
-backgroundColor = "#F0F2F6" # Gris muy suave (Fondo general para que no canse la vista)
-secondaryBackgroundColor = "#FFFFFF" # Blanco puro (Para las tarjetas/inputs)
-textColor = "#262730" # Gris oscuro (Texto legible)
+base = "light"             # Fuerza el modo claro
+primaryColor = "#0033A0"   # Azul ONPE (Botones y acentos)
+backgroundColor = "#FFFFFF" # Fondo Blanco puro
+secondaryBackgroundColor = "#F0F8FF" # Azul muy pálido (para las cajas de texto)
+textColor = "#262730"      # Texto oscuro
 font = "sans serif"
-
-[server]
-headless = true
-enableCORS = false
