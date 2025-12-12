@@ -16,40 +16,40 @@ st.set_page_config(
 # --- 2. ESTILOS CSS (MODO OSCURO / DARK MODE) ---
 st.markdown("""
 <style>
-    /* Fondo general (aseguramos que sea oscuro) */
+    /* Fondo general */
     .stApp {
         background-color: #0E1117;
     }
     
-    /* Tarjetas Oscuras (Dark Cards) */
+    /* Tarjetas Oscuras */
     .css-card {
         border-radius: 12px;
         padding: 20px;
-        background-color: #1E212B; /* Gris azulado oscuro */
-        border: 1px solid #30333F; /* Borde sutil */
+        background-color: #1E212B;
+        border: 1px solid #30333F;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         margin-bottom: 20px;
     }
     
-    /* Textos con alto contraste */
+    /* Textos */
     h1, h2, h3 {
-        color: #ffffff !important; /* Blanco puro */
+        color: #ffffff !important;
         font-family: 'Arial', sans-serif;
-        text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1); /* Brillo sutil */
+        text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1);
     }
     
     p, li, div {
-        color: #e0e0e0; /* Blanco hueso para lectura cómoda */
+        color: #e0e0e0;
     }
 
-    /* Inputs (Cajas de texto) */
+    /* Inputs */
     .stTextInput input, .stSelectbox, .stTextArea textarea {
         color: #ffffff;
     }
 
-    /* Botones Primarios (Rojo Neón para contraste) */
+    /* Botones */
     div.stButton > button:first-child {
-        background-color: #D91E18; /* Rojo Intenso */
+        background-color: #D91E18;
         color: white;
         border-radius: 8px;
         height: 3em;
@@ -57,12 +57,11 @@ st.markdown("""
         border: 1px solid #D91E18;
     }
     div.stButton > button:first-child:hover {
-        background-color: #ff2b2b; /* Rojo más brillante al pasar el mouse */
-        box-shadow: 0 0 15px rgba(217, 30, 24, 0.6); /* Efecto Glow/Resplandor */
+        background-color: #ff2b2b;
+        box-shadow: 0 0 15px rgba(217, 30, 24, 0.6);
         color: white;
     }
 
-    /* Ocultar elementos de sistema */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -90,7 +89,8 @@ def main():
     col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
     with col_logo2:
         try:
-            st.image("logo.png", use_column_width=True)
+            # AQUÍ ESTABA EL ERROR: Cambiamos 'use_column_width' por 'use_container_width'
+            st.image("logo.png", use_container_width=True)
         except:
             st.markdown("<h1 style='text-align: center; font-size: 50px;'>🇵🇪</h1>", unsafe_allow_html=True)
     
@@ -104,7 +104,6 @@ def main():
     with tab1:
         df = cargar_datos()
         
-        # Simulamos una tarjeta visual con st.container
         with st.container():
             st.markdown("### 🔍 Consulta Ciudadana")
             st.info("Ingresa tus datos para verificar tu estado.")
@@ -118,7 +117,6 @@ def main():
                     distrito = st.selectbox("Seleccione distrito", nombres, label_visibility="collapsed")
                     
                     categoria = df[df['nombre'] == distrito]['categoria'].values[0]
-                    # Etiqueta de color brillante
                     color_tag = "#00c853" if categoria == "No Pobre" else "#ffab00"
                     st.markdown(f"<span style='color:{color_tag}; font-weight:bold;'>• Clasificación: {categoria}</span>", unsafe_allow_html=True)
                     
@@ -187,6 +185,7 @@ def main():
 
         if generar:
             if nombre and dni and motivo:
+                # Usamos un distrito genérico si no se ha seleccionado uno específico en esta pestaña
                 pdf = crear_pdf_dispensa(nombre, dni, motivo, "Mi Distrito")
                 st.success("Documento generado correctamente.")
                 st.download_button("⬇️ DESCARGAR PDF", pdf, "solicitud.pdf", "application/pdf")
