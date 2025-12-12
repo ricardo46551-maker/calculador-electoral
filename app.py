@@ -26,6 +26,8 @@ def cargar_datos():
 def main():
     st.title("🇵🇪 Asistente Electoral 2025")
     
+    st.image("logo.png", width=100)
+    
     # PESTAÑAS
     tab1, tab2 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa (PDF)"])
 
