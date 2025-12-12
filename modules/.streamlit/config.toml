@@ -1,7 +1,7 @@
 [theme]
-base = "light"             # Fuerza el modo claro
-primaryColor = "#0033A0"   # Azul ONPE (Botones y acentos)
-backgroundColor = "#FFFFFF" # Fondo Blanco puro
-secondaryBackgroundColor = "#F0F8FF" # Azul muy pálido (para las cajas de texto)
-textColor = "#262730"      # Texto oscuro
+base = "dark"               # Activa el modo oscuro base
+primaryColor = "#FF4B4B"    # Rojo brillante para botones (Gran contraste sobre negro)
+backgroundColor = "#0E1117" # Fondo Negro/Gris muy oscuro (Elegante)
+secondaryBackgroundColor = "#262730" # Fondo de los inputs (Gris oscuro)
+textColor = "#FAFAFA"       # Texto Blanco Puro
 font = "sans serif"

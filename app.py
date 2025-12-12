@@ -13,45 +13,56 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. ESTILOS CSS (AZUL Y BLANCO) ---
+# --- 2. ESTILOS CSS (MODO OSCURO / DARK MODE) ---
 st.markdown("""
 <style>
-    /* Forzar fondo blanco por si acaso */
+    /* Fondo general (aseguramos que sea oscuro) */
     .stApp {
-        background-color: #ffffff;
+        background-color: #0E1117;
     }
     
-    /* Tarjetas con borde azul suave */
+    /* Tarjetas Oscuras (Dark Cards) */
     .css-card {
-        border-radius: 10px;
+        border-radius: 12px;
         padding: 20px;
-        background-color: white;
-        box-shadow: 0 4px 12px rgba(0, 51, 160, 0.1); /* Sombra azulada */
-        border: 1px solid #e1e8f0;
+        background-color: #1E212B; /* Gris azulado oscuro */
+        border: 1px solid #30333F; /* Borde sutil */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         margin-bottom: 20px;
     }
     
-    /* Títulos en Azul ONPE */
+    /* Textos con alto contraste */
     h1, h2, h3 {
-        color: #0033A0 !important;
+        color: #ffffff !important; /* Blanco puro */
         font-family: 'Arial', sans-serif;
+        text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.1); /* Brillo sutil */
     }
     
-    /* Botones Azules */
+    p, li, div {
+        color: #e0e0e0; /* Blanco hueso para lectura cómoda */
+    }
+
+    /* Inputs (Cajas de texto) */
+    .stTextInput input, .stSelectbox, .stTextArea textarea {
+        color: #ffffff;
+    }
+
+    /* Botones Primarios (Rojo Neón para contraste) */
     div.stButton > button:first-child {
-        background-color: #0033A0;
+        background-color: #D91E18; /* Rojo Intenso */
         color: white;
         border-radius: 8px;
         height: 3em;
         font-weight: bold;
-        border: none;
+        border: 1px solid #D91E18;
     }
     div.stButton > button:first-child:hover {
-        background-color: #00227a; /* Azul más oscuro al pasar el mouse */
+        background-color: #ff2b2b; /* Rojo más brillante al pasar el mouse */
+        box-shadow: 0 0 15px rgba(217, 30, 24, 0.6); /* Efecto Glow/Resplandor */
         color: white;
     }
 
-    /* Ocultar menú de Streamlit */
+    /* Ocultar elementos de sistema */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -81,10 +92,10 @@ def main():
         try:
             st.image("logo.png", use_column_width=True)
         except:
-            st.header("🇵🇪 ONPE")
+            st.markdown("<h1 style='text-align: center; font-size: 50px;'>🇵🇪</h1>", unsafe_allow_html=True)
     
     st.markdown("<h1 style='text-align: center;'>Asistente Electoral 2025</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #666;'>Consulta oficial de multas y dispensas</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #a0a0a0;'>Modo Oscuro | Consulta oficial de multas</p>", unsafe_allow_html=True)
 
     # TABS
     tab1, tab2, tab3 = st.tabs(["📊 Calculadora", "📄 Trámite Dispensa", "ℹ️ Ayuda"])
@@ -93,7 +104,7 @@ def main():
     with tab1:
         df = cargar_datos()
         
-        # Contenedor visual
+        # Simulamos una tarjeta visual con st.container
         with st.container():
             st.markdown("### 🔍 Consulta Ciudadana")
             st.info("Ingresa tus datos para verificar tu estado.")
@@ -106,12 +117,14 @@ def main():
                     nombres = df['nombre'].tolist()
                     distrito = st.selectbox("Seleccione distrito", nombres, label_visibility="collapsed")
                     
-                    # Datos del distrito
                     categoria = df[df['nombre'] == distrito]['categoria'].values[0]
-                    st.caption(f"Clasificación: {categoria}")
+                    # Etiqueta de color brillante
+                    color_tag = "#00c853" if categoria == "No Pobre" else "#ffab00"
+                    st.markdown(f"<span style='color:{color_tag}; font-weight:bold;'>• Clasificación: {categoria}</span>", unsafe_allow_html=True)
                     
+                    st.markdown("<br>", unsafe_allow_html=True)
                     url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
-                    st.markdown(f"[📍 Ver Oficina ODPE en Mapa]({url_mapa})")
+                    st.link_button("📍 Ver Oficina en Mapa", url_mapa)
 
                 with col2:
                     st.markdown("**Participación**")
@@ -134,7 +147,7 @@ def main():
             st.session_state['desglose_actual'] = desglose
 
             if total > 0:
-                st.error("⚠️ Se han encontrado multas pendientes")
+                st.error("⚠️ DEUDA DETECTADA")
                 
                 with st.container():
                     col_res1, col_res2 = st.columns([2,1])
@@ -145,10 +158,11 @@ def main():
                         st.metric(label="Total a Pagar", value=f"S/ {total:.2f}")
                 
                 st.markdown("---")
+                st.write("**Opciones de Pago:**")
                 st.link_button("💳 PAGAR EN PÁGALO.PE", "https://www.pagalo.pe/", use_container_width=True)
                 
             else:
-                st.success("🎉 ¡No registras multas estimadas!")
+                st.success("🎉 ¡LIMPIO! No tienes multas pendientes.")
                 st.balloons()
                 st.session_state['deuda_actual'] = 0.0
 
