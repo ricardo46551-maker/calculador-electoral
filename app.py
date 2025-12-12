@@ -26,9 +26,13 @@ def cargar_datos():
 def main():
     st.title("🇵🇪 Asistente Electoral 2025")
     
-    st.image("logo.png", width=100)
+    # Muestra el logo (Asegúrate de que logo.png exista en GitHub)
+    try:
+        st.image("logo.png", width=100)
+    except:
+        pass # Si falla la imagen, no rompe la app
     
-    # PESTAÑAS
+    # PESTAÑAS PRINCIPALES
     tab1, tab2 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa (PDF)"])
 
     # --- PESTAÑA 1: CALCULADORA ---
@@ -43,8 +47,14 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 distrito = st.selectbox("📍 Distrito de votación", nombres_distritos)
+                # Buscamos la categoría del distrito
                 categoria = df[df['nombre'] == distrito]['categoria'].values[0]
                 st.info(f"Clasificación: **{categoria}**")
+                
+                # --- NUEVO: BOTÓN DE MAPA ---
+                # Genera un link de búsqueda en Google Maps para "ODPE + Distrito"
+                url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
+                st.link_button("🗺️ Ubicar Oficina ONPE", url_mapa, help="Buscar oficina electoral cercana en Google Maps")
             
             with col2:
                 es_miembro = st.checkbox("¿Fui Miembro de Mesa?")
@@ -53,11 +63,17 @@ def main():
                     asistio_mesa = st.checkbox("¿Asistí a instalar?")
                 voto = st.checkbox("¿Fui a votar?")
 
+            st.divider()
+
+            # Botón de cálculo
             if st.button("Calcular Deuda", type="primary"):
                 paga_mesa = es_miembro and not asistio_mesa
+                
+                # Llamamos a tu lógica matemática
                 calc = CalculadoraElectoral()
                 total, desglose = calc.calcular_deuda(paga_mesa, voto, categoria)
                 
+                # GUARDAMOS EN MEMORIA
                 st.session_state['deuda_actual'] = total
                 st.session_state['desglose_actual'] = desglose
 
@@ -68,12 +84,14 @@ def main():
                 else:
                     st.success("¡Sin multas estimadas!")
                     st.balloons()
+                    # Reset si no hay deuda
                     st.session_state['deuda_actual'] = 0.0
 
     # --- PESTAÑA 2: GENERADOR DE CARTAS ---
     with tab2:
         st.header("Generador de Solicitud de Dispensa")
         
+        # MOSTRAR LA DEUDA DE LA MEMORIA
         monto = st.session_state['deuda_actual']
         if monto > 0:
             st.metric(label="Monto a justificar:", value=f"S/ {monto:.2f}", delta="Deuda pendiente", delta_color="inverse")
@@ -83,20 +101,27 @@ def main():
 
         st.divider()
 
+        # FORMULARIO
         with st.form("form_carta"):
             nombre_usuario = st.text_input("Nombre Completo")
             dni_usuario = st.text_input("DNI")
             motivo_usuario = st.text_area("Explica el motivo (Ej: Salud, Robo, Viaje)")
             
+            # Botón dentro del form (solo envía datos)
             generar = st.form_submit_button("Generar Documento PDF")
 
+        # LÓGICA FUERA DEL FORM (Para que funcione la descarga)
         if generar:
             if nombre_usuario and dni_usuario and motivo_usuario:
+                # Usamos el distrito seleccionado o uno genérico
                 distrito_actual = "Mi Distrito" 
+                
+                # Generar el PDF en memoria
                 pdf_buffer = crear_pdf_dispensa(nombre_usuario, dni_usuario, motivo_usuario, distrito_actual)
                 
                 st.success("¡Documento generado con éxito!")
                 
+                # Botón de descarga
                 st.download_button(
                     label="⬇️ Descargar Solicitud PDF",
                     data=pdf_buffer,
@@ -113,4 +138,4 @@ def main():
     st.caption("Versión 1.0.0 | Datos 2025")
 
 if __name__ == '__main__':
-    main()            
+    main()          
