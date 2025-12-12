@@ -89,7 +89,6 @@ def main():
     col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
     with col_logo2:
         try:
-            # AQUÍ ESTABA EL ERROR: Cambiamos 'use_column_width' por 'use_container_width'
             st.image("logo.png", use_container_width=True)
         except:
             st.markdown("<h1 style='text-align: center; font-size: 50px;'>🇵🇪</h1>", unsafe_allow_html=True)
@@ -98,7 +97,7 @@ def main():
     st.markdown("<p style='text-align: center; color: #a0a0a0;'>Modo Oscuro | Consulta oficial de multas</p>", unsafe_allow_html=True)
 
     # TABS
-    tab1, tab2, tab3 = st.tabs(["📊 Calculadora", "📄 Trámite Dispensa", "ℹ️ Ayuda"])
+    tab1, tab2, tab3 = st.tabs(["📊 Calculadora", "📄 Trámite Dispensa", "ℹ️ Ayuda & FAQ"])
 
     # --- TAB 1: CALCULADORA ---
     with tab1:
@@ -185,20 +184,44 @@ def main():
 
         if generar:
             if nombre and dni and motivo:
-                # Usamos un distrito genérico si no se ha seleccionado uno específico en esta pestaña
                 pdf = crear_pdf_dispensa(nombre, dni, motivo, "Mi Distrito")
                 st.success("Documento generado correctamente.")
                 st.download_button("⬇️ DESCARGAR PDF", pdf, "solicitud.pdf", "application/pdf")
             else:
                 st.warning("Completa todos los campos.")
 
-    # --- TAB 3: FAQ ---
+    # --- TAB 3: FAQ (AMPLIADO) ---
     with tab3:
-        st.markdown("### Preguntas Frecuentes")
-        with st.expander("¿Hasta qué edad es obligatorio?"):
-            st.write("Hasta los 70 años.")
-        with st.expander("¿Cuánto es la multa 2025?"):
-            st.write("Depende de tu distrito. Usa la calculadora para saber el monto exacto.")
+        st.markdown("### 📚 Centro de Ayuda al Elector")
+        st.markdown("Respuestas a las dudas más comunes sobre el proceso 2025.")
+        
+        # Lista ampliada de preguntas
+        preguntas_frecuentes = [
+            ("📆 ¿Hasta qué edad es obligatorio votar?", 
+             "El voto es obligatorio desde los 18 hasta los 70 años. Para los mayores de 70 años es facultativo (opcional), por lo que no generan multa si no asisten."),
+            
+            ("💰 ¿Cuánto es la multa en 2025?", 
+             "Depende de la clasificación de tu distrito (Pobre, No Pobre, Extremo) y de la UIT vigente (S/ 5,350). Usa la **Calculadora** en la primera pestaña para ver tu monto exacto."),
+            
+            ("🆔 ¿Puedo votar con mi DNI vencido?", 
+             "**SÍ.** El RENIEC suele prorrogar la vigencia de los DNI caducos o por caducar exclusivamente para el día de las elecciones, permitiendo que todos ejerzan su derecho al voto."),
+            
+            ("🚫 Si tengo multas antiguas, ¿puedo votar?", 
+             "**SÍ.** Nadie puede impedirte votar, incluso si tienes multas pendientes de años anteriores. Sin embargo, la deuda seguirá acumulándose y podría llegar a cobranza coactiva."),
+            
+            ("🤰 ¿Si estoy embarazada o lactando tengo multa?", 
+             "Sí, si no asistes se genera la multa, **PERO** puedes pedir una **Dispensa** (trámite gratuito) ante el JNE presentando tu certificado médico o partida de nacimiento del bebé."),
+            
+            ("💳 ¿Dónde pago mis multas?", 
+             "Puedes pagarlas en la plataforma **Págalo.pe** del Banco de la Nación, o presencialmente en las agencias del banco. Conserva tu voucher."),
+             
+            ("📉 ¿Cuándo prescriben las multas?", 
+             "Las multas electorales pueden prescribir a los 4 años, pero debes solicitar la prescripción formalmente ante el JNE. No es automático.")
+        ]
+        
+        for pregunta, respuesta in preguntas_frecuentes:
+            with st.expander(pregunta):
+                st.markdown(respuesta)
 
     # FOOTER
     st.divider()
