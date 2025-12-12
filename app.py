@@ -33,8 +33,8 @@ def main():
     except:
         pass 
     
-    # PESTAÑAS
-    tab1, tab2 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa (PDF)"])
+    # DEFINICIÓN DE LAS 3 PESTAÑAS
+    tab1, tab2, tab3 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa", "❓ Preguntas Frecuentes"])
 
     # --- PESTAÑA 1: CALCULADORA ---
     with tab1:
@@ -80,7 +80,7 @@ def main():
                     for item in desglose:
                         st.write(f"- {item}")
                     
-                    # --- AQUÍ ESTÁ EL CÓDIGO NUEVO DE PÁGALO.PE ---
+                    # Botón Págalo.pe
                     st.markdown("---")
                     st.write("👇 **¿Quieres pagar ahora?**")
                     st.link_button(
@@ -88,7 +88,6 @@ def main():
                         "https://www.pagalo.pe/", 
                         help="Plataforma oficial para pagar multas al JNE"
                     )
-                    # ---------------------------------------------
 
                 else:
                     st.success("¡Sin multas estimadas!")
@@ -129,6 +128,41 @@ def main():
                 )
             else:
                 st.warning("⚠️ Por favor completa todos los campos.")
+
+    # --- PESTAÑA 3: PREGUNTAS FRECUENTES (NUEVO) ---
+    with tab3:
+        st.header("Resolviendo tus dudas")
+        st.markdown("Aquí respondemos las preguntas más comunes sobre el proceso electoral.")
+        
+        with st.expander("❓ ¿Hasta qué edad es obligatorio votar?"):
+            st.write("""
+            El voto es obligatorio para todos los ciudadanos peruanos a partir de los **18 años** hasta los **70 años**. 
+            
+            Para los mayores de 70 años, el voto es facultativo (opcional), por lo que no generan multa si no asisten.
+            """)
+            
+        with st.expander("👮 ¿Qué pasa si no pago mis multas?"):
+            st.write("""
+            Si no pagas tus multas electorales, el JNE puede iniciar un proceso de cobranza coactiva. Además, tendrás estas restricciones:
+            * No podrás inscribir cualquier acto relacionado con tu estado civil (matrimonio, divorcio, viudez, etc.).
+            * No podrás intervenir en procesos judiciales o administrativos.
+            * No podrás realizar actos notariales ni firmar contratos.
+            * No podrás ser nombrado funcionario público.
+            """)
+            
+        with st.expander("🤰 ¿Si estoy embarazada o lactando tengo que pagar?"):
+            st.write("""
+            Las ciudadanas en estado de gestación o en periodo de lactancia **pueden solicitar una Dispensa (si fue antes de la elección) o Justificación (si fue después)** de manera gratuita ante el JNE.
+            
+            **Importante:** No es automático. Debes realizar el trámite virtual presentando el certificado médico o la partida de nacimiento del bebé.
+            """)
+            
+        with st.expander("📈 ¿La multa sube con el tiempo?"):
+            st.write("""
+            Las multas electorales no generan intereses bancarios tradicionales, pero están vinculadas a la UIT (Unidad Impositiva Tributaria). 
+            
+            Si la UIT sube el próximo año, y tu deuda entra a cobranza coactiva, los gastos administrativos pueden aumentar el monto total a pagar.
+            """)
 
     # --- PIE DE PÁGINA (WHATSAPP + CRÉDITOS) ---
     st.divider()
