@@ -1,0 +1,9 @@
+[
+    {"nombre": "Villa María del Triunfo", "categoria": "Pobre"},
+    {"nombre": "San Juan de Miraflores", "categoria": "Pobre"},
+    {"nombre": "Miraflores", "categoria": "No Pobre"},
+    {"nombre": "San Isidro", "categoria": "No Pobre"},
+    {"nombre": "Villa El Salvador", "categoria": "Pobre"},
+    {"nombre": "Pachacámac", "categoria": "Pobre Extremo"},
+    {"nombre": "Lurín", "categoria": "No Pobre"}
+]
