@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import json
+import urllib.parse # <--- NUEVO: Necesario para crear el link de WhatsApp
 from modules.calculadora import CalculadoraElectoral
 from modules.generador_pdf import crear_pdf_dispensa
 
@@ -26,11 +27,11 @@ def cargar_datos():
 def main():
     st.title("🇵🇪 Asistente Electoral 2025")
     
-    # Muestra el logo (Asegúrate de que logo.png exista en GitHub)
+    # Logo
     try:
         st.image("logo.png", width=100)
     except:
-        pass # Si falla la imagen, no rompe la app
+        pass 
     
     # PESTAÑAS PRINCIPALES
     tab1, tab2 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa (PDF)"])
@@ -51,8 +52,7 @@ def main():
                 categoria = df[df['nombre'] == distrito]['categoria'].values[0]
                 st.info(f"Clasificación: **{categoria}**")
                 
-                # --- NUEVO: BOTÓN DE MAPA ---
-                # Genera un link de búsqueda en Google Maps para "ODPE + Distrito"
+                # BOTÓN DE MAPA (ODPE)
                 url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
                 st.link_button("🗺️ Ubicar Oficina ONPE", url_mapa, help="Buscar oficina electoral cercana en Google Maps")
             
@@ -69,11 +69,9 @@ def main():
             if st.button("Calcular Deuda", type="primary"):
                 paga_mesa = es_miembro and not asistio_mesa
                 
-                # Llamamos a tu lógica matemática
                 calc = CalculadoraElectoral()
                 total, desglose = calc.calcular_deuda(paga_mesa, voto, categoria)
                 
-                # GUARDAMOS EN MEMORIA
                 st.session_state['deuda_actual'] = total
                 st.session_state['desglose_actual'] = desglose
 
@@ -81,17 +79,25 @@ def main():
                     st.error(f"Deuda Total Estimada: S/ {total:.2f}")
                     for item in desglose:
                         st.write(f"- {item}")
+                    
+                    # --- NUEVO: BOTÓN DE PAGO (Solo si hay deuda) ---
+                    st.markdown("---")
+                    st.write("**¿Quieres solucionar esto ahora?**")
+                    st.link_button(
+                        "💳 Ir a Págalo.pe (Banco de la Nación)", 
+                        "https://www.pagalo.pe/", 
+                        help="Plataforma oficial para pagar multas al JNE"
+                    )
+
                 else:
                     st.success("¡Sin multas estimadas!")
                     st.balloons()
-                    # Reset si no hay deuda
                     st.session_state['deuda_actual'] = 0.0
 
     # --- PESTAÑA 2: GENERADOR DE CARTAS ---
     with tab2:
         st.header("Generador de Solicitud de Dispensa")
         
-        # MOSTRAR LA DEUDA DE LA MEMORIA
         monto = st.session_state['deuda_actual']
         if monto > 0:
             st.metric(label="Monto a justificar:", value=f"S/ {monto:.2f}", delta="Deuda pendiente", delta_color="inverse")
@@ -101,27 +107,20 @@ def main():
 
         st.divider()
 
-        # FORMULARIO
         with st.form("form_carta"):
             nombre_usuario = st.text_input("Nombre Completo")
             dni_usuario = st.text_input("DNI")
             motivo_usuario = st.text_area("Explica el motivo (Ej: Salud, Robo, Viaje)")
             
-            # Botón dentro del form (solo envía datos)
             generar = st.form_submit_button("Generar Documento PDF")
 
-        # LÓGICA FUERA DEL FORM (Para que funcione la descarga)
         if generar:
             if nombre_usuario and dni_usuario and motivo_usuario:
-                # Usamos el distrito seleccionado o uno genérico
                 distrito_actual = "Mi Distrito" 
-                
-                # Generar el PDF en memoria
                 pdf_buffer = crear_pdf_dispensa(nombre_usuario, dni_usuario, motivo_usuario, distrito_actual)
                 
                 st.success("¡Documento generado con éxito!")
                 
-                # Botón de descarga
                 st.download_button(
                     label="⬇️ Descargar Solicitud PDF",
                     data=pdf_buffer,
@@ -131,11 +130,22 @@ def main():
             else:
                 st.warning("⚠️ Por favor completa todos los campos.")
 
-    # --- CRÉDITOS (PIE DE PÁGINA) ---
+    # --- PIE DE PÁGINA: COMPARTIR Y CRÉDITOS ---
     st.divider()
-    st.caption("🗳️ **Sobre la App:** Herramienta ciudadana no oficial para cálculo de multas y dispensas.")
-    st.write("**Desarrollado por:** Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma")
-    st.caption("Versión 1.0.0 | Datos 2025")
+    
+    # --- NUEVO: BOTÓN DE COMPARTIR WHATSAPP ---
+    # Creamos el mensaje personalizado
+    texto_whatsapp = "¡Hola! Encontré esta app para calcular multas electorales y generar dispensas gratis. Mírala aquí: https://calculador-electoral.onrender.com"
+    texto_encoded = urllib.parse.quote(texto_whatsapp)
+    link_wa = f"https://wa.me/?text={texto_encoded}"
+    
+    col_footer1, col_footer2 = st.columns([1, 3])
+    with col_footer1:
+        st.link_button("📲 Compartir App", link_wa, help="Enviar por WhatsApp")
+    
+    with col_footer2:
+        st.caption("🗳️ **Sobre la App:** Herramienta ciudadana no oficial.")
+        st.caption("**Equipo:** Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma")
 
 if __name__ == '__main__':
-    main()          
+    main()     
