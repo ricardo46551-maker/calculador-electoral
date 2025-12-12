@@ -122,3 +122,5 @@ def main():
                 pdf_buffer = crear_pdf_dispensa(nombre_usuario, dni_usuario, motivo_usuario, distrito_actual)
                 
                 st.success("¡Documento generado con éxito!")
+if __name__ == '__main__':
+    main()                
