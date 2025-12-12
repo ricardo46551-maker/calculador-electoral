@@ -5,180 +5,248 @@ import urllib.parse
 from modules.calculadora import CalculadoraElectoral
 from modules.generador_pdf import crear_pdf_dispensa
 
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(page_title="Calculadora Electoral", page_icon="🇵🇪")
+# --- 1. CONFIGURACIÓN DE PÁGINA PROFESIONAL ---
+st.set_page_config(
+    page_title="Asistente Electoral 2025", 
+    page_icon="🇵🇪",
+    layout="centered", # 'centered' se ve más elegante para formularios que 'wide'
+    initial_sidebar_state="collapsed"
+)
 
-# 2. INICIALIZACIÓN DE MEMORIA
+# --- 2. ESTILOS CSS PERSONALIZADOS (EL SECRETO DEL DISEÑO) ---
+st.markdown("""
+<style>
+    /* Estilo para el fondo y contenedores */
+    .stApp {
+        background-color: #f4f6f9;
+    }
+    
+    /* Estilo para las 'Tarjetas' (Contenedores blancos con sombra) */
+    .css-card {
+        border-radius: 10px;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    /* Títulos más elegantes */
+    h1 {
+        color: #2c3e50;
+        text-align: center;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 700;
+        margin-bottom: 0px;
+    }
+    h2, h3 {
+        color: #34495e;
+        font-family: 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Botones primarios más llamativos */
+    div.stButton > button:first-child {
+        width: 100%;
+        border-radius: 8px;
+        height: 3em;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    div.stButton > button:first-child:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    /* Ocultar elementos molestos de Streamlit */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
+# --- 3. INICIALIZACIÓN DE MEMORIA ---
 if 'deuda_actual' not in st.session_state:
     st.session_state['deuda_actual'] = 0.0
 if 'desglose_actual' not in st.session_state:
     st.session_state['desglose_actual'] = []
 
-# 3. FUNCIÓN DE CARGA DE DATOS
+# --- 4. FUNCIÓN DE CARGA ---
 def cargar_datos():
     try:
         with open('data/distritos.json', 'r', encoding='utf-8') as f:
             return pd.DataFrame(json.load(f))
     except FileNotFoundError:
-        st.error("⚠️ No se encontró el archivo data/distritos.json")
+        st.error("⚠️ Error crítico: Base de datos no encontrada.")
         return pd.DataFrame()
 
-# 4. LÓGICA PRINCIPAL
+# --- 5. INTERFAZ PRINCIPAL ---
 def main():
-    st.title("🇵🇪 Asistente Electoral 2025")
+    # --- ENCABEZADO TIPO HERO ---
+    col_logo1, col_logo2, col_logo3 = st.columns([1,2,1])
+    with col_logo2:
+        try:
+            st.image("logo.png", use_column_width=True)
+        except:
+            st.markdown("<h1 style='font-size: 60px;'>🇵🇪</h1>", unsafe_allow_html=True)
     
-    # Logo (si existe)
-    try:
-        st.image("logo.png", width=100)
-    except:
-        pass 
-    
-    # DEFINICIÓN DE LAS 3 PESTAÑAS
-    tab1, tab2, tab3 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa", "❓ Preguntas Frecuentes"])
+    st.markdown("<h1>Asistente Electoral 2025</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #7f8c8d; margin-bottom: 30px;'>Consulta de multas, ubicación de oficinas y gestión de dispensas.</p>", unsafe_allow_html=True)
 
-    # --- PESTAÑA 1: CALCULADORA ---
+    # --- NAVEGACIÓN ESTILIZADA ---
+    tab1, tab2, tab3 = st.tabs(["📊 Calculadora & Pagos", "📄 Generar Trámite", "ℹ️ Ayuda & Dudas"])
+
+    # ==========================
+    # PESTAÑA 1: CALCULADORA
+    # ==========================
     with tab1:
-        st.write("Consulta rápida de deudas electorales según tu distrito.")
-        
         df = cargar_datos()
         
-        if not df.empty:
-            nombres_distritos = df['nombre'].tolist()
-
-            col1, col2 = st.columns(2)
-            with col1:
-                distrito = st.selectbox("📍 Distrito de votación", nombres_distritos)
-                # Categoría
-                categoria = df[df['nombre'] == distrito]['categoria'].values[0]
-                st.info(f"Clasificación: **{categoria}**")
-                
-                # Botón Mapa ONPE
-                url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
-                st.link_button("🗺️ Ubicar Oficina ONPE", url_mapa, help="Ver oficina en Google Maps")
+        # Usamos st.container para agrupar visualmente (efecto tarjeta)
+        with st.container():
+            st.markdown("### 🔍 Tu Información Electoral")
+            st.info("Selecciona los datos para simular tu situación actual.")
             
-            with col2:
-                es_miembro = st.checkbox("¿Fui Miembro de Mesa?")
-                asistio_mesa = False
-                if es_miembro:
-                    asistio_mesa = st.checkbox("¿Asistí a instalar?")
-                voto = st.checkbox("¿Fui a votar?")
-
-            st.divider()
-
-            # Botón Calcular
-            if st.button("Calcular Deuda", type="primary"):
-                paga_mesa = es_miembro and not asistio_mesa
+            if not df.empty:
+                col_input1, col_input2 = st.columns(2)
                 
-                calc = CalculadoraElectoral()
-                total, desglose = calc.calcular_deuda(paga_mesa, voto, categoria)
-                
-                st.session_state['deuda_actual'] = total
-                st.session_state['desglose_actual'] = desglose
-
-                if total > 0:
-                    st.error(f"Deuda Total Estimada: S/ {total:.2f}")
-                    for item in desglose:
-                        st.write(f"- {item}")
+                with col_input1:
+                    st.markdown("**¿Dónde votas?**")
+                    nombres_distritos = df['nombre'].tolist()
+                    distrito = st.selectbox("Seleccione distrito", nombres_distritos, label_visibility="collapsed")
                     
-                    # Botón Págalo.pe
-                    st.markdown("---")
-                    st.write("👇 **¿Quieres pagar ahora?**")
-                    st.link_button(
-                        "💳 Ir a Págalo.pe (Banco de la Nación)", 
-                        "https://www.pagalo.pe/", 
-                        help="Plataforma oficial para pagar multas al JNE"
-                    )
+                    # Logic para categoria
+                    categoria = df[df['nombre'] == distrito]['categoria'].values[0]
+                    
+                    # Badge de categoría
+                    color_badge = "blue" if categoria == "No Pobre" else "orange"
+                    st.markdown(f"<span style='background-color:{color_badge}; color:white; padding: 4px 8px; border-radius: 4px; font-size: 12px;'>{categoria}</span>", unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
+                    st.link_button("📍 Ver Oficina en Mapa", url_mapa)
 
-                else:
-                    st.success("¡Sin multas estimadas!")
-                    st.balloons()
-                    st.session_state['deuda_actual'] = 0.0
+                with col_input2:
+                    st.markdown("**Tu participación**")
+                    es_miembro = st.toggle("Fui Miembro de Mesa")
+                    
+                    asistio_mesa = False
+                    if es_miembro:
+                        asistio_mesa = st.checkbox("✅ Asistí a instalar")
+                    
+                    voto = st.checkbox("✅ Fui a votar")
 
-    # --- PESTAÑA 2: GENERADOR PDF ---
+        st.markdown("---")
+
+        # Botón de Acción Principal
+        col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
+        with col_btn2:
+            calcular = st.button("CALCULAR MI ESTADO", type="primary")
+
+        if calcular:
+            paga_mesa = es_miembro and not asistio_mesa
+            calc = CalculadoraElectoral()
+            total, desglose = calc.calcular_deuda(paga_mesa, voto, categoria)
+            
+            st.session_state['deuda_actual'] = total
+            st.session_state['desglose_actual'] = desglose
+
+            if total > 0:
+                # Diseño de Alerta de Deuda
+                st.error("⚠️ Se han detectado multas pendientes")
+                
+                # Tarjeta de Resultado
+                with st.container():
+                    col_res1, col_res2 = st.columns([2,1])
+                    with col_res1:
+                        st.markdown("#### Detalle:")
+                        for item in desglose:
+                            st.write(f"• {item}")
+                    with col_res2:
+                        st.metric(label="Total a Pagar", value=f"S/ {total:.2f}")
+                
+                # Call to Action: Pagar
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.link_button("💳 PAGAR AHORA (Págalo.pe)", "https://www.pagalo.pe/", use_container_width=True)
+                
+            else:
+                st.success("🎉 ¡Excelente! No tienes deudas estimadas.")
+                st.balloons()
+                st.session_state['deuda_actual'] = 0.0
+
+    # ==========================
+    # PESTAÑA 2: DOCUMENTOS
+    # ==========================
     with tab2:
-        st.header("Generador de Solicitud de Dispensa")
+        st.markdown("### 📝 Generador de Solicitudes")
+        st.markdown("Si tienes una justificación válida, genera tu documento oficial aquí.")
         
+        # Panel lateral de estado
         monto = st.session_state['deuda_actual']
         if monto > 0:
-            st.metric(label="Monto a justificar:", value=f"S/ {monto:.2f}", delta="Deuda pendiente", delta_color="inverse")
-            st.warning("Recuerda adjuntar tus pruebas a esta solicitud.")
-        else:
-            st.info("💡 Consejo: Calcula tu multa en la primera pestaña para ver el monto aquí.")
-
-        st.divider()
-
-        with st.form("form_carta"):
-            nombre_usuario = st.text_input("Nombre Completo")
-            dni_usuario = st.text_input("DNI")
-            motivo_usuario = st.text_area("Explica el motivo (Ej: Salud, Robo, Viaje)")
-            
-            generar = st.form_submit_button("Generar Documento PDF")
+            st.warning(f"💡 Estás gestionando una dispensa por: **S/ {monto:.2f}**")
+        
+        with st.container():
+            with st.form("form_carta"):
+                col_form1, col_form2 = st.columns(2)
+                with col_form1:
+                    nombre_usuario = st.text_input("Nombres y Apellidos")
+                with col_form2:
+                    dni_usuario = st.text_input("DNI / CE")
+                
+                motivo_usuario = st.text_area("Detalle de la justificación (Sé claro y breve)")
+                
+                st.caption("Al generar este documento, declaras que la información es verdadera.")
+                generar = st.form_submit_button("📄 GENERAR DOCUMENTO PDF")
 
         if generar:
             if nombre_usuario and dni_usuario and motivo_usuario:
                 distrito_actual = "Mi Distrito" 
                 pdf_buffer = crear_pdf_dispensa(nombre_usuario, dni_usuario, motivo_usuario, distrito_actual)
                 
-                st.success("¡Documento generado con éxito!")
-                st.download_button(
-                    label="⬇️ Descargar Solicitud PDF",
-                    data=pdf_buffer,
-                    file_name="solicitud_dispensa.pdf",
-                    mime="application/pdf"
-                )
+                st.success("¡Documento listo!")
+                
+                col_d1, col_d2, col_d3 = st.columns([1,2,1])
+                with col_d2:
+                    st.download_button(
+                        label="⬇️ DESCARGAR PDF OFICIAL",
+                        data=pdf_buffer,
+                        file_name="Solicitud_Dispensa_2025.pdf",
+                        mime="application/pdf",
+                        type="primary"
+                    )
             else:
-                st.warning("⚠️ Por favor completa todos los campos.")
+                st.warning("⚠️ Por favor completa todos los campos requeridos.")
 
-    # --- PESTAÑA 3: PREGUNTAS FRECUENTES (NUEVO) ---
+    # ==========================
+    # PESTAÑA 3: FAQ
+    # ==========================
     with tab3:
-        st.header("Resolviendo tus dudas")
-        st.markdown("Aquí respondemos las preguntas más comunes sobre el proceso electoral.")
+        st.markdown("### 📚 Centro de Ayuda")
         
-        with st.expander("❓ ¿Hasta qué edad es obligatorio votar?"):
-            st.write("""
-            El voto es obligatorio para todos los ciudadanos peruanos a partir de los **18 años** hasta los **70 años**. 
-            
-            Para los mayores de 70 años, el voto es facultativo (opcional), por lo que no generan multa si no asisten.
-            """)
-            
-        with st.expander("👮 ¿Qué pasa si no pago mis multas?"):
-            st.write("""
-            Si no pagas tus multas electorales, el JNE puede iniciar un proceso de cobranza coactiva. Además, tendrás estas restricciones:
-            * No podrás inscribir cualquier acto relacionado con tu estado civil (matrimonio, divorcio, viudez, etc.).
-            * No podrás intervenir en procesos judiciales o administrativos.
-            * No podrás realizar actos notariales ni firmar contratos.
-            * No podrás ser nombrado funcionario público.
-            """)
-            
-        with st.expander("🤰 ¿Si estoy embarazada o lactando tengo que pagar?"):
-            st.write("""
-            Las ciudadanas en estado de gestación o en periodo de lactancia **pueden solicitar una Dispensa (si fue antes de la elección) o Justificación (si fue después)** de manera gratuita ante el JNE.
-            
-            **Importante:** No es automático. Debes realizar el trámite virtual presentando el certificado médico o la partida de nacimiento del bebé.
-            """)
-            
-        with st.expander("📈 ¿La multa sube con el tiempo?"):
-            st.write("""
-            Las multas electorales no generan intereses bancarios tradicionales, pero están vinculadas a la UIT (Unidad Impositiva Tributaria). 
-            
-            Si la UIT sube el próximo año, y tu deuda entra a cobranza coactiva, los gastos administrativos pueden aumentar el monto total a pagar.
-            """)
+        preguntas = [
+            ("¿Hasta qué edad es obligatorio votar?", "Desde los 18 hasta los 70 años. Mayores de 70 es facultativo."),
+            ("¿Qué pasa si no pago?", "No podrás realizar trámites notariales, ser funcionario público ni inscribir actos en SUNARP."),
+            ("¿Cómo tramito una dispensa?", "Es 100% virtual a través de la página del JNE, adjuntando tu PDF generado aquí y las pruebas."),
+            ("¿La UIT cambia?", "Sí, en 2025 la UIT es de S/ 5,350. Los montos de esta app están actualizados.")
+        ]
+        
+        for preg, resp in preguntas:
+            with st.expander(f"❓ {preg}"):
+                st.write(resp)
 
-    # --- PIE DE PÁGINA (WHATSAPP + CRÉDITOS) ---
+    # --- FOOTER ---
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.divider()
     
-    # Link de WhatsApp
-    texto_whatsapp = "¡Hola! Mira esta app para calcular multas electorales y dispensas: https://calculador-electoral.onrender.com"
-    texto_encoded = urllib.parse.quote(texto_whatsapp)
-    link_wa = f"https://wa.me/?text={texto_encoded}"
+    # Share Section
+    texto_whatsapp = "Consulta tus multas electorales 2025 aquí: https://calculador-electoral.onrender.com"
+    link_wa = f"https://wa.me/?text={urllib.parse.quote(texto_whatsapp)}"
     
-    col_footer1, col_footer2 = st.columns([1, 3])
-    with col_footer1:
-        st.link_button("📲 Compartir App", link_wa, help="Enviar por WhatsApp")
-    
-    with col_footer2:
-        st.caption("🗳️ **Sobre la App:** Herramienta ciudadana no oficial.")
-        st.caption("**Equipo:** Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma")
+    col_f1, col_f2 = st.columns([1, 4])
+    with col_f1:
+        st.link_button("📲 Compartir", link_wa)
+    with col_f2:
+        st.caption("Desarrollado por: **Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma**")
+        st.caption("© 2025 Herramienta Ciudadana Independiente v2.0 Pro")
 
 if __name__ == '__main__':
     main()
