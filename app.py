@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
 import json
-import urllib.parse # <--- NUEVO: Necesario para crear el link de WhatsApp
+import urllib.parse 
 from modules.calculadora import CalculadoraElectoral
 from modules.generador_pdf import crear_pdf_dispensa
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="Calculadora Electoral", page_icon="🇵🇪")
 
-# 2. INICIALIZACIÓN DE MEMORIA (SESSION STATE)
+# 2. INICIALIZACIÓN DE MEMORIA
 if 'deuda_actual' not in st.session_state:
     st.session_state['deuda_actual'] = 0.0
 if 'desglose_actual' not in st.session_state:
@@ -27,13 +27,13 @@ def cargar_datos():
 def main():
     st.title("🇵🇪 Asistente Electoral 2025")
     
-    # Logo
+    # Logo (si existe)
     try:
         st.image("logo.png", width=100)
     except:
         pass 
     
-    # PESTAÑAS PRINCIPALES
+    # PESTAÑAS
     tab1, tab2 = st.tabs(["💰 Calculadora de Multas", "📄 Generar Excusa (PDF)"])
 
     # --- PESTAÑA 1: CALCULADORA ---
@@ -48,13 +48,13 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 distrito = st.selectbox("📍 Distrito de votación", nombres_distritos)
-                # Buscamos la categoría del distrito
+                # Categoría
                 categoria = df[df['nombre'] == distrito]['categoria'].values[0]
                 st.info(f"Clasificación: **{categoria}**")
                 
-                # BOTÓN DE MAPA (ODPE)
+                # Botón Mapa ONPE
                 url_mapa = f"https://www.google.com/maps/search/ODPE+{distrito.replace(' ', '+')}"
-                st.link_button("🗺️ Ubicar Oficina ONPE", url_mapa, help="Buscar oficina electoral cercana en Google Maps")
+                st.link_button("🗺️ Ubicar Oficina ONPE", url_mapa, help="Ver oficina en Google Maps")
             
             with col2:
                 es_miembro = st.checkbox("¿Fui Miembro de Mesa?")
@@ -65,7 +65,7 @@ def main():
 
             st.divider()
 
-            # Botón de cálculo
+            # Botón Calcular
             if st.button("Calcular Deuda", type="primary"):
                 paga_mesa = es_miembro and not asistio_mesa
                 
@@ -80,21 +80,22 @@ def main():
                     for item in desglose:
                         st.write(f"- {item}")
                     
-                    # --- NUEVO: BOTÓN DE PAGO (Solo si hay deuda) ---
+                    # --- AQUÍ ESTÁ EL CÓDIGO NUEVO DE PÁGALO.PE ---
                     st.markdown("---")
-                    st.write("**¿Quieres solucionar esto ahora?**")
+                    st.write("👇 **¿Quieres pagar ahora?**")
                     st.link_button(
                         "💳 Ir a Págalo.pe (Banco de la Nación)", 
                         "https://www.pagalo.pe/", 
                         help="Plataforma oficial para pagar multas al JNE"
                     )
+                    # ---------------------------------------------
 
                 else:
                     st.success("¡Sin multas estimadas!")
                     st.balloons()
                     st.session_state['deuda_actual'] = 0.0
 
-    # --- PESTAÑA 2: GENERADOR DE CARTAS ---
+    # --- PESTAÑA 2: GENERADOR PDF ---
     with tab2:
         st.header("Generador de Solicitud de Dispensa")
         
@@ -120,7 +121,6 @@ def main():
                 pdf_buffer = crear_pdf_dispensa(nombre_usuario, dni_usuario, motivo_usuario, distrito_actual)
                 
                 st.success("¡Documento generado con éxito!")
-                
                 st.download_button(
                     label="⬇️ Descargar Solicitud PDF",
                     data=pdf_buffer,
@@ -130,12 +130,11 @@ def main():
             else:
                 st.warning("⚠️ Por favor completa todos los campos.")
 
-    # --- PIE DE PÁGINA: COMPARTIR Y CRÉDITOS ---
+    # --- PIE DE PÁGINA (WHATSAPP + CRÉDITOS) ---
     st.divider()
     
-    # --- NUEVO: BOTÓN DE COMPARTIR WHATSAPP ---
-    # Creamos el mensaje personalizado
-    texto_whatsapp = "¡Hola! Encontré esta app para calcular multas electorales y generar dispensas gratis. Mírala aquí: https://calculador-electoral.onrender.com"
+    # Link de WhatsApp
+    texto_whatsapp = "¡Hola! Mira esta app para calcular multas electorales y dispensas: https://calculador-electoral.onrender.com"
     texto_encoded = urllib.parse.quote(texto_whatsapp)
     link_wa = f"https://wa.me/?text={texto_encoded}"
     
@@ -148,4 +147,4 @@ def main():
         st.caption("**Equipo:** Ricardo Condori, Manuel Serra, Pablo Huasasquiche, Cristhian Arotoma")
 
 if __name__ == '__main__':
-    main()     
+    main()
