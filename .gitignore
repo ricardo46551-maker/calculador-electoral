@@ -1,0 +1,6 @@
+# Archivos de sistema y entornos virtuales
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
