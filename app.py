@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import urllib.parse 
 import os
+import io  # <--- NUEVO: Necesario para generar el Excel en memoria
 from datetime import datetime
 from modules.calculadora import CalculadoraElectoral
 from modules.generador_pdf import crear_pdf_dispensa
@@ -23,33 +24,27 @@ def guardar_consulta(dni, distrito, categoria, tiene_deuda):
     fecha = datetime.now().strftime("%Y-%m-%d")
     hora = datetime.now().strftime("%H:%M:%S")
     
-    # Si el usuario no puso DNI, guardamos "Anónimo"
     dni_guardar = dni if dni and len(dni) >= 8 else "Anónimo"
     
     nuevo_dato = {
         "fecha": fecha,
         "hora": hora,
-        "dni": dni_guardar, # <--- NUEVO CAMPO
+        "dni": dni_guardar,
         "distrito": distrito,
         "categoria": categoria,
         "tiene_deuda": "SI" if tiene_deuda else "NO"
     }
     
-    # Lógica de guardado a prueba de errores
     if not os.path.exists(ARCHIVO_REGISTRO):
         df = pd.DataFrame([nuevo_dato])
         df.to_csv(ARCHIVO_REGISTRO, index=False)
     else:
-        # Cargamos el archivo existente para ver si tiene la columna DNI
         df_existente = pd.read_csv(ARCHIVO_REGISTRO)
         if "dni" not in df_existente.columns:
-            # Si es un archivo viejo sin DNI, recreamos la estructura
             df_new = pd.DataFrame([nuevo_dato])
-            # Concatenamos lo nuevo con lo viejo (rellenando DNI viejos con NaN)
             df_final = pd.concat([df_existente, df_new], ignore_index=True)
             df_final.to_csv(ARCHIVO_REGISTRO, index=False)
         else:
-            # Si la estructura está bien, solo agregamos la fila (append)
             df_new = pd.DataFrame([nuevo_dato])
             df_new.to_csv(ARCHIVO_REGISTRO, mode='a', header=False, index=False)
 
@@ -121,11 +116,10 @@ def main():
             st.info("Ingresa tus datos para verificar tu estado.")
             
             if not df.empty:
-                # --- NUEVO: INPUT DNI AL INICIO ---
                 st.markdown("**1. Identificación**")
                 dni_consulta = st.text_input("Ingresa tu DNI (Opcional para registro)", max_chars=8, help="Se usará para generar tu reporte")
                 
-                st.divider() # Línea separadora visual
+                st.divider() 
                 
                 col1, col2 = st.columns(2)
                 
@@ -160,9 +154,8 @@ def main():
             st.session_state['deuda_actual'] = total
             st.session_state['desglose_actual'] = desglose
 
-            # --- REGISTRAR LA CONSULTA CON DNI ---
+            # REGISTRO
             guardar_consulta(dni_consulta, distrito, categoria, total > 0)
-            # -------------------------------------
 
             if total > 0:
                 st.error("⚠️ DEUDA DETECTADA")
@@ -227,7 +220,7 @@ def main():
         st.caption("Desarrollado por: Equipo de Desarrollo 2025")
 
     # ==========================================
-    # 🔐 ZONA ADMIN (PANEL OCULTO)
+    # 🔐 ZONA ADMIN (CON EXCEL)
     # ==========================================
     st.sidebar.markdown("---")
     with st.sidebar.expander("🔐 Acceso Admin"):
@@ -247,36 +240,45 @@ def main():
                 st.rerun()
             
             st.markdown("---")
-            st.markdown("### 📊 Métricas de Uso")
+            st.markdown("### 📊 Dashboard de Control")
             
             df_logs = cargar_registros()
             
             if not df_logs.empty:
                 # 1. KPIs
                 total_consultas = len(df_logs)
-                # Contamos cuántos DNIs únicos (excluyendo "Anónimo" si quisieras)
-                dnis_capturados = df_logs[df_logs['dni'] != 'Anónimo']['dni'].nunique()
+                if 'dni' in df_logs.columns:
+                    dnis_capturados = df_logs[df_logs['dni'] != 'Anónimo']['dni'].nunique()
+                else:
+                    dnis_capturados = 0
                 
                 kpi1, kpi2 = st.columns(2)
                 kpi1.metric("Total Consultas", total_consultas)
-                kpi2.metric("DNIs Únicos", dnis_capturados)
+                kpi2.metric("DNIs Capturados", dnis_capturados)
                 
                 # 2. Gráficos
                 st.markdown("#### 🏆 Distritos Top")
                 st.bar_chart(df_logs['distrito'].value_counts().head(5))
                 
-                # 3. Tabla de Datos (Ahora con DNI)
-                st.markdown("#### 📋 Registro Detallado")
-                # Mostramos el DNI al admin
-                st.dataframe(df_logs[['fecha', 'hora', 'dni', 'distrito', 'tiene_deuda']].tail(10))
+                # 3. Vista Previa de Tabla
+                st.markdown("#### 📋 Vista Previa")
+                st.dataframe(df_logs.tail(5))
                 
-                # 4. Descarga
-                csv = df_logs.to_csv(index=False).encode('utf-8')
+                # 4. DESCARGA EN EXCEL (NUEVO)
+                # Creamos un buffer en memoria para guardar el Excel
+                buffer = io.BytesIO()
+                
+                # Usamos pandas para escribir en ese buffer con formato Excel
+                # engine='openpyxl' es lo que agregamos en requirements.txt
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    df_logs.to_excel(writer, index=False, sheet_name='Reporte')
+                
+                # Botón de descarga actualizado
                 st.download_button(
-                    "📥 Descargar Base de Datos (CSV)",
-                    csv,
-                    "registro_completo_con_dni.csv",
-                    "text/csv"
+                    label="📥 Descargar Excel (.xlsx)",
+                    data=buffer,
+                    file_name="reporte_visitas_2025.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
                 st.info("Aún no hay registros de visitas.")
