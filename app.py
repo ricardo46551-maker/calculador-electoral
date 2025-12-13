@@ -101,7 +101,7 @@ def main():
         except:
             st.markdown("<h1 style='text-align: center;'>🇵🇪</h1>", unsafe_allow_html=True)
     
-    st.markdown("<h1 style='text-align: center;'>Asistente Electoral 2025</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Asistente Electoral 2026</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #a0a0a0;'>Modo Oscuro | Consulta oficial de multas</p>", unsafe_allow_html=True)
 
     # TABS
