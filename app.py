@@ -117,7 +117,7 @@ def main():
             
             if not df.empty:
                 st.markdown("**1. Identificación**")
-                dni_consulta = st.text_input("Ingresa tu DNI (Opcional para registro)", max_chars=8, help="Se usará para generar tu reporte")
+                dni_consulta = st.text_input("Ingresa tu DNI", max_chars=8, help="Se usará para generar tu reporte")
                 
                 st.divider() 
                 
