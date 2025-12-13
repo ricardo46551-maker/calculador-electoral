@@ -239,7 +239,7 @@ def main():
     # --- CRÉDITOS DEL EQUIPO (AQUÍ ESTÁN) ---
     with col_ft2:
         st.markdown("**Equipo de Desarrollo:**")
-        st.caption("👨‍💻 Ricardo Condori | Manuel Serra | Pablo Huasasquiche | Cristhian Arotoma")
+        st.caption("👨‍💻 Ricardo Condori | Manuel Serra | Pablo Huasasquiche | Cristhian Arotoma | Arnold Cocha")
         st.caption("© 2025 Herramienta Ciudadana Independiente")
 
     # ==========================================
