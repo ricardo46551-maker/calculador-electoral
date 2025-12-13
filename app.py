@@ -10,7 +10,7 @@ from modules.generador_pdf import crear_pdf_dispensa
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Asistente Electoral 2025", 
+    page_title="Asistente Electoral 2026", 
     page_icon="🇵🇪",
     layout="centered",
     initial_sidebar_state="collapsed"
